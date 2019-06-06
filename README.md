@@ -1,9 +1,7 @@
 [![GoDoc](https://godoc.org/github.com/adam-hanna/bitmex-client?status.svg)](https://godoc.org/github.com/adam-hanna/bitmex-client)
 
 # Bitmex API
-Packages for work with bitmex rest and websocket API on golang.
-
-Target of this packages make easy access to bitmex API including testnet platform.
+Packages provides a golang client for the bitmex rest and websocket API's.
 
 
 ## Usage
