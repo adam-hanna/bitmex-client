@@ -1,3 +1,5 @@
+// +build unit
+
 package config
 
 import (
@@ -5,7 +7,11 @@ import (
 )
 
 func TestGetConfig(t *testing.T) {
-	config := LoadConfig("../config.json")
+	config, err := LoadConfig("../config.json.example")
+	if err != nil {
+		t.Fatalf("err loading config:\n%v", err)
+	}
+
 	if config.Host == "" {
 		t.Error("No config")
 	}
@@ -18,7 +24,11 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestGetMasterConfig(t *testing.T) {
-	config := LoadMasterConfig("../config.json")
+	config, err := LoadMasterConfig("../config.json.example")
+	if err != nil {
+		t.Fatalf("err loading master config:\n%v", err)
+	}
+
 	if config.Master.Host == "" {
 		t.Error("No config")
 	}
