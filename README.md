@@ -26,7 +26,7 @@ Packages provides a golang client for the bitmex rest and websocket API's.
 ```
 
 ####  REST
-```
+```golang
 // Load config
 cfg, err := config.LoadConfig("config.json")
 if err != nil {
@@ -59,7 +59,7 @@ fmt.Printf("Order: %+v, Response: %+v\n", order, response)
 ```
 
 #### Websocket
-```
+```golang
 // Load config
 cfg, err := config.LoadConfig("config.json")
 if err != nil {
@@ -137,7 +137,7 @@ go func() {
 ```
 
 ## Example
-```
+```golang
 package main
 
 import (
