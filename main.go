@@ -1,33 +1,46 @@
 package main
 
 import (
-	"fmt"
-	"github.com/vmpartner/bitmex/bitmex"
-	"github.com/vmpartner/bitmex/config"
-	"github.com/vmpartner/bitmex/rest"
-	"github.com/vmpartner/bitmex/tools"
-	"github.com/vmpartner/bitmex/websocket"
+	"log"
 	"strings"
+
+	"github.com/adam-hanna/bitmex-client/bitmex"
+	"github.com/adam-hanna/bitmex-client/config"
+	"github.com/adam-hanna/bitmex-client/rest"
+	"github.com/adam-hanna/bitmex-client/websocket"
 )
 
 // Usage example
 func main() {
-
 	// Load config
-	cfg := config.LoadConfig("config.json")
+	cfg, err := config.LoadConfig("config.json")
+	if err != nil {
+		log.Fatalf("could not load config.json")
+	}
+
 	ctx := rest.MakeContext(cfg.Key, cfg.Secret, cfg.Host, cfg.Timeout)
 
 	// Get wallet
 	w, response, err := rest.GetWallet(ctx)
-	tools.CheckErr(err)
-	fmt.Printf("Status: %v, wallet amount: %v\n", response.StatusCode, w.Amount)
+	if err != nil {
+		log.Fatalf("err getting wallet:\n%v", err)
+	}
+
+	log.Printf("Status: %v, wallet amount: %v\n", response.StatusCode, w.Amount)
 
 	// Connect to WS
-	conn := websocket.Connect(cfg.Host)
-	defer conn.Close()
+	conn, err := websocket.Connect(cfg.Host)
+	if err != nil {
+		log.Fatalf("could not connect ws to %s:\n%v", cfg.Host, err)
+	}
+	defer func() {
+		if err = conn.Close(); err != nil {
+			log.Fatalf("err closing ws conn:\n%v", err)
+		}
+	}()
 
 	// Listen read WS
-	chReadFromWS := make(chan []byte, 100)
+	chReadFromWS := make(chan interface{}, 100)
 	go websocket.ReadFromWSToChannel(conn, chReadFromWS)
 
 	// Listen write WS
@@ -35,32 +48,64 @@ func main() {
 	go websocket.WriteFromChannelToWS(conn, chWriteToWS)
 
 	// Authorize
-	chWriteToWS <- websocket.GetAuthMessage(cfg.Key, cfg.Secret)
+	authMsg, err := websocket.GetAuthMessage(cfg.Key, cfg.Secret)
+	if err != nil {
+		log.Fatalf("err getting auth message from ws:\n%v", err)
+	}
+	chWriteToWS <- authMsg
 
 	// Read first response message
 	message := <-chReadFromWS
-	if !strings.Contains(string(message), "Welcome to the BitMEX") {
-		fmt.Println(string(message))
-		panic("No welcome message")
+	if !strings.Contains(string(message.([]byte)), "Welcome to the BitMEX") {
+		log.Println(string(message.([]byte)))
+		log.Fatal("No welcome message")
 	}
 
 	// Read auth response success
-	message = <-chReadFromWS
-	res, err := bitmex.DecodeMessage(message)
-	tools.CheckErr(err)
-	if res.Success != true || res.Request.(map[string]interface{})["op"] != "authKey" {
-		panic("No auth response success")
+	switch message := <-chReadFromWS; v := message.(type) {
+	case []byte:
+		res, err := bitmex.DecodeMessage(v)
+		if err != nil {
+			log.Fatalf("err decoding message:\n%v", err)
+		}
+
+		if !res.Success || res.Request.(map[string]interface{})["op"] != "authKey" {
+			log.Fatal("No auth response success")
+		}
+
+	case error:
+		log.Printf("err reading from ws:\n%v", v)
+
+	default:
+		log.Printf("unknown message type %T:\n%v", message, message)
 	}
 
 	// Listen websocket before subscribe
 	go func() {
-		for {
-			message := <-chReadFromWS
-			res, err := bitmex.DecodeMessage(message)
-			tools.CheckErr(err)
+		var (
+			err     error
+			message interface{}
+			res     *bitmex.Response
+		)
 
-			// Your logic here
-			fmt.Printf("%+v\n", res)
+		for {
+			switch message = <-chReadFromWS; v := message.(type) {
+			case []byte:
+				res, err = bitmex.DecodeMessage(v)
+				if err != nil {
+					log.Printf("err decoding message:\n%v", err)
+					continue
+				}
+
+				// Your logic here
+				log.Printf("%+v\n", res)
+
+			case error:
+				log.Printf("err reading from ws:\n%v", v)
+
+			default:
+				log.Printf("unknown message type %T:\n%v", message, message)
+			}
 		}
 	}()
 

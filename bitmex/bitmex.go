@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// Response ...
 type Response struct {
 	Success   bool        `json:"success,omitempty"`
 	Subscribe string      `json:"subscribe,omitempty"`
@@ -13,9 +14,10 @@ type Response struct {
 	Data      interface{} `json:"data,omitempty"`
 }
 
-func DecodeMessage(message []byte) (Response, error) {
+// DecodeMessage ...
+func DecodeMessage(message []byte) (*Response, error) {
 	var res Response
 	err := json.Unmarshal(message, &res)
 
-	return res, err
+	return &res, err
 }

@@ -2,10 +2,12 @@ package rest
 
 import (
 	"context"
-	"github.com/vmpartner/bitmex/swagger"
 	"net/http"
+
+	"github.com/adam-hanna/bitmex-client/swagger"
 )
 
+// MakeContext ...
 func MakeContext(key string, secret string, host string, timeout int64) context.Context {
 	return context.WithValue(context.TODO(), swagger.ContextAPIKey, swagger.APIKey{
 		Key:     key,
@@ -15,6 +17,7 @@ func MakeContext(key string, secret string, host string, timeout int64) context.
 	})
 }
 
+// GetClient ...
 func GetClient(ctx context.Context) *swagger.APIClient {
 	c := ctx.Value(swagger.ContextAPIKey).(swagger.APIKey)
 	cfg := &swagger.Configuration{
@@ -27,6 +30,7 @@ func GetClient(ctx context.Context) *swagger.APIClient {
 	return swagger.NewAPIClient(cfg)
 }
 
+// NewOrder ...
 func NewOrder(ctx context.Context, params map[string]interface{}) (swagger.Order, *http.Response, error) {
 	client := GetClient(ctx)
 	order, response, err := client.OrderApi.OrderNew(ctx, "XBTUSD", params)
@@ -34,6 +38,7 @@ func NewOrder(ctx context.Context, params map[string]interface{}) (swagger.Order
 	return order, response, err
 }
 
+// AmendOrder ...
 func AmendOrder(ctx context.Context, params map[string]interface{}) (swagger.Order, *http.Response, error) {
 	client := GetClient(ctx)
 	order, response, err := client.OrderApi.OrderAmend(ctx, params)
@@ -41,6 +46,7 @@ func AmendOrder(ctx context.Context, params map[string]interface{}) (swagger.Ord
 	return order, response, err
 }
 
+// GetOrder ...
 func GetOrder(ctx context.Context, params map[string]interface{}) ([]swagger.Order, *http.Response, error) {
 	client := GetClient(ctx)
 	orders, response, err := client.OrderApi.OrderGetOrders(ctx, params)
@@ -48,6 +54,7 @@ func GetOrder(ctx context.Context, params map[string]interface{}) ([]swagger.Ord
 	return orders, response, err
 }
 
+// GetPosition ...
 func GetPosition(ctx context.Context, params map[string]interface{}) ([]swagger.Position, *http.Response, error) {
 	client := GetClient(ctx)
 	positions, response, err := client.PositionApi.PositionGet(ctx, params)
@@ -55,6 +62,7 @@ func GetPosition(ctx context.Context, params map[string]interface{}) ([]swagger.
 	return positions, response, err
 }
 
+// GetTrade ...
 func GetTrade(ctx context.Context, params map[string]interface{}) ([]swagger.Trade, *http.Response, error) {
 	client := GetClient(ctx)
 	positions, response, err := client.TradeApi.TradeGet(params)
@@ -62,6 +70,7 @@ func GetTrade(ctx context.Context, params map[string]interface{}) ([]swagger.Tra
 	return positions, response, err
 }
 
+// CancelOrder ...
 func CancelOrder(ctx context.Context, params map[string]interface{}) ([]swagger.Order, *http.Response, error) {
 	client := GetClient(ctx)
 	orders, response, err := client.OrderApi.OrderCancel(ctx, params)
@@ -69,6 +78,7 @@ func CancelOrder(ctx context.Context, params map[string]interface{}) ([]swagger.
 	return orders, response, err
 }
 
+// GetWallet ...
 func GetWallet(ctx context.Context) (swagger.Wallet, *http.Response, error) {
 	params := map[string]interface{}{
 		"currency": "",
