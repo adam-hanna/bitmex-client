@@ -88,3 +88,10 @@ func GetWallet(ctx context.Context) (swagger.Wallet, *http.Response, error) {
 
 	return wallet, response, err
 }
+
+// GetWalletHistory...
+func GetWalletHistory(ctx context.Context, params map[string]interface{}) ([]swagger.Transaction, *http.Response, error) {
+	client := GetClient(ctx)
+
+	return client.UserApi.UserGetWalletHistory(ctx, params)
+}
